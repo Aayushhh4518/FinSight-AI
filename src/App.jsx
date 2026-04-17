@@ -1,1283 +1,451 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  BarChart3,
-  Bell,
-  BrainCircuit,
-  BriefcaseBusiness,
-  CheckCircle2,
-  CreditCard,
-  DollarSign,
-  Landmark,
-  LayoutDashboard,
-  Menu,
-  Moon,
-  PiggyBank,
-  Search,
-  Settings,
-  ShieldCheck,
-  SlidersHorizontal,
-  Sparkles,
-  Sun,
-  Target,
-  TrendingDown,
-  TrendingUp,
-  Wallet,
-  X,
-  Zap,
-} from "lucide-react";
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
 import {
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-const formatMoney = (value) =>
-  `\u20B9${new Intl.NumberFormat("en-IN", {
-    maximumFractionDigits: 0,
-  }).format(Number(value) || 0)}`;
-
-const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { id: "analytics", label: "Analytics", icon: BarChart3 },
-  { id: "insights", label: "AI Insights", icon: BrainCircuit },
-  { id: "settings", label: "Settings", icon: Settings },
+  LayoutDashboard, BarChart3, BrainCircuit, Settings, Search,
+  Bell, Sun, Moon, ArrowUpRight, ArrowDownRight, Wallet,
+  CreditCard, TrendingUp, Zap, ChevronDown, Activity
+} from 'lucide-react';
+// --- MOCK DATA ---
+const revenueData = [
+  { name: 'Jan', income: 4000, expenses: 2400 },
+  { name: 'Feb', income: 3000, expenses: 1398 },
+  { name: 'Mar', income: 2000, expenses: 9800 },
+  { name: 'Apr', income: 2780, expenses: 3908 },
+  { name: 'May', income: 1890, expenses: 4800 },
+  { name: 'Jun', income: 2390, expenses: 3800 },
+  { name: 'Jul', income: 3490, expenses: 4300 },
 ];
 
-const ranges = ["Last 7 days", "Last 30 days", "3 months"];
-
-const trendData = {
-  "Last 7 days": [
-    { label: "Mon", income: 11200, expenses: 6400, savings: 4800 },
-    { label: "Tue", income: 9800, expenses: 7100, savings: 2700 },
-    { label: "Wed", income: 12400, expenses: 5900, savings: 6500 },
-    { label: "Thu", income: 11700, expenses: 7600, savings: 4100 },
-    { label: "Fri", income: 14800, expenses: 6900, savings: 7900 },
-    { label: "Sat", income: 13600, expenses: 8200, savings: 5400 },
-    { label: "Sun", income: 12100, expenses: 6100, savings: 6000 },
-  ],
-  "Last 30 days": [
-    { label: "Week 1", income: 68200, expenses: 33800, savings: 34400 },
-    { label: "Week 2", income: 71400, expenses: 36100, savings: 35300 },
-    { label: "Week 3", income: 75800, expenses: 34700, savings: 41100 },
-    { label: "Week 4", income: 79200, expenses: 38900, savings: 40300 },
-  ],
-  "3 months": [
-    { label: "Jan", income: 246000, expenses: 132000, savings: 114000 },
-    { label: "Feb", income: 258000, expenses: 141000, savings: 117000 },
-    { label: "Mar", income: 271000, expenses: 146000, savings: 125000 },
-  ],
-};
-
-const spendData = [
-  { name: "Food", value: 27, color: "#8b5cf6" },
-  { name: "Investments", value: 24, color: "#06b6d4" },
-  { name: "Bills", value: 18, color: "#f97316" },
-  { name: "Travel", value: 14, color: "#22c55e" },
-  { name: "Shopping", value: 17, color: "#ec4899" },
+const categoryData = [
+  { name: 'Housing', value: 400 },
+  { name: 'Food', value: 300 },
+  { name: 'Transport', value: 300 },
+  { name: 'Entertainment', value: 200 },
 ];
+const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#10b981'];
 
 const transactions = [
-  { name: "Salary Credit", date: "17 Apr 2026", category: "Income", amount: 125000, positive: true },
-  { name: "HDFC SIP AutoPay", date: "16 Apr 2026", category: "Investments", amount: -5000, positive: false },
-  { name: "Swiggy", date: "16 Apr 2026", category: "Food", amount: -1240, positive: false },
-  { name: "Uber Premier", date: "15 Apr 2026", category: "Travel", amount: -680, positive: false },
-  { name: "Apple Services", date: "15 Apr 2026", category: "Subscriptions", amount: -899, positive: false },
-  { name: "Freelance Project", date: "13 Apr 2026", category: "Side Income", amount: 28000, positive: true },
-  { name: "Electricity Bill", date: "11 Apr 2026", category: "Bills", amount: -3200, positive: false },
-  { name: "Amazon Order", date: "10 Apr 2026", category: "Shopping", amount: -4599, positive: false },
+  { id: 1, name: 'Apple Store', date: 'Today, 2:45 PM', category: 'Electronics', amount: -199.00 },
+  { id: 2, name: 'Salary Deposit', date: 'Yesterday, 9:00 AM', category: 'Income', amount: 4500.00 },
+  { id: 3, name: 'Uber Rides', date: 'Oct 24, 8:30 PM', category: 'Transport', amount: -24.50 },
+  { id: 4, name: 'Whole Foods', date: 'Oct 23, 6:15 PM', category: 'Groceries', amount: -112.30 },
+  { id: 5, name: 'Netflix Subscription', date: 'Oct 21, 10:00 AM', category: 'Entertainment', amount: -15.99 },
 ];
 
-const portfolio = [
-  { label: "Equity SIP", current: 182000, target: 250000, change: "+14.2%" },
-  { label: "Emergency Fund", current: 91000, target: 120000, change: "+8.1%" },
-  { label: "Retirement Vault", current: 148000, target: 200000, change: "+10.6%" },
+const insights = [
+  { id: 1, title: 'Overspending Warning', desc: 'You are overspending on food by 24% this month.', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  { id: 2, title: 'Smart Investment', desc: 'Invest ₹5000 in SIP to stay on track for your yearly goal.', icon: TrendingUp, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  { id: 3, title: 'Savings Milestone', desc: 'Great job! Your savings increased by 12% compared to last month.', icon: Wallet, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
 ];
 
-const insightCards = [
-  {
-    title: "You are overspending on food",
-    body: "Dining and delivery spend is 19% higher than your monthly target. Reducing two orders a week can save about 4,800 this month.",
-    tone: "rose",
-    icon: CreditCard,
-  },
-  {
-    title: "Invest 5,000 in SIP",
-    body: "Your free cash flow can safely support another 5,000 monthly SIP without dropping below your emergency reserve target.",
-    tone: "cyan",
-    icon: Landmark,
-  },
-  {
-    title: "Savings increased by 12%",
-    body: "You are ahead of your quarterly savings milestone. If you keep the same pace, you will close the quarter above target.",
-    tone: "emerald",
-    icon: PiggyBank,
-  },
-];
-
-const themeMap = {
-  dark: {
-    app: "bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.16),transparent_24%),radial-gradient(circle_at_top_right,rgba(168,85,247,0.18),transparent_30%),linear-gradient(145deg,#020617_0%,#081127_45%,#1b1038_100%)] text-white",
-    sidebar: "border-white/10 bg-slate-950/60",
-    sidebarCard: "border-white/10 bg-white/5",
-    topbar: "border-white/10 bg-slate-950/45",
-    panel: "border-white/10 bg-white/[0.055] shadow-[0_24px_80px_rgba(15,23,42,0.34)]",
-    mutedPanel: "border-white/10 bg-white/5",
-    text: "text-white",
-    softText: "text-slate-300",
-    mutedText: "text-slate-400",
-    subtleText: "text-slate-500",
-    input: "border-white/10 bg-white/5 text-white placeholder:text-slate-500 focus:border-cyan-400/40 focus:bg-white/10",
-    button: "border-white/10 bg-white/5 text-slate-100 hover:bg-white/10",
-    activeNav: "border-violet-400/30 bg-gradient-to-r from-violet-500/20 to-cyan-400/10 text-white",
-    inactiveNav: "border-transparent text-slate-400 hover:border-white/10 hover:bg-white/5 hover:text-white",
-    tableHead: "bg-white/5 text-slate-400",
-    divider: "divide-white/10",
-    overlay: "bg-slate-950/60",
-  },
-  light: {
-    app: "bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_24%),radial-gradient(circle_at_top_right,rgba(217,70,239,0.10),transparent_30%),linear-gradient(145deg,#f8fbff_0%,#eef4ff_46%,#f8f3ff_100%)] text-slate-900",
-    sidebar: "border-slate-200/80 bg-white/78",
-    sidebarCard: "border-slate-200/80 bg-white/70",
-    topbar: "border-slate-200/80 bg-white/72",
-    panel: "border-slate-200/80 bg-white/72 shadow-[0_18px_60px_rgba(148,163,184,0.20)]",
-    mutedPanel: "border-slate-200/80 bg-white/78",
-    text: "text-slate-900",
-    softText: "text-slate-700",
-    mutedText: "text-slate-500",
-    subtleText: "text-slate-400",
-    input: "border-slate-200/80 bg-white/80 text-slate-900 placeholder:text-slate-400 focus:border-cyan-500/40 focus:bg-white",
-    button: "border-slate-200/80 bg-white/80 text-slate-700 hover:bg-slate-50",
-    activeNav: "border-violet-200 bg-gradient-to-r from-violet-100 to-cyan-100 text-slate-900",
-    inactiveNav: "border-transparent text-slate-500 hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900",
-    tableHead: "bg-slate-100/70 text-slate-500",
-    divider: "divide-slate-200/80",
-    overlay: "bg-slate-950/30",
-  },
+// --- ANIMATION VARIANTS ---
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
 };
 
-function cx(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeInOut" } }
+};
 
-function toggleClass(tone) {
-  if (tone === "rose") return "border-rose-400/20 bg-rose-400/10 text-rose-300";
-  if (tone === "cyan") return "border-cyan-400/20 bg-cyan-400/10 text-cyan-300";
-  return "border-emerald-400/20 bg-emerald-400/10 text-emerald-300";
-}
+// --- COMPONENTS ---
 
-function insightGradient(tone) {
-  if (tone === "rose") return "from-rose-500/20 via-rose-400/10 to-transparent";
-  if (tone === "cyan") return "from-cyan-500/20 via-cyan-400/10 to-transparent";
-  return "from-emerald-500/20 via-emerald-400/10 to-transparent";
-}
+const GlassCard = ({ children, className = '' }) => (
+  <motion.div
+    variants={itemVariants}
+    whileHover={{ scale: 1.02 }}
+    className={`bg-white/60 dark:bg-slate-900/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm dark:shadow-2xl transition-all duration-300 ${className}`}
+  >
+    {children}
+  </motion.div>
+);
 
-function ThemeToggle({ dark, onToggle, theme }) {
+export default function App() {
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+      setIsDark(true);
+      document.documentElement.classList.add('dark');
+    } else {
+      setIsDark(false);
+      document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    if (isDark) {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+      setIsDark(false);
+    } else {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+      setIsDark(true);
+    }
+  };
+
   return (
-    <motion.button
-      whileHover={{ scale: 1.04 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.22, ease: "easeInOut" }}
-      onClick={onToggle}
-      className={cx(
-        "relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border backdrop-blur-xl transition-all duration-300",
-        theme.button
-      )}
-      aria-label="Toggle theme"
-    >
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={dark ? "moon" : "sun"}
-          initial={{ opacity: 0, y: 5, rotate: -16 }}
-          animate={{ opacity: 1, y: 0, rotate: 0 }}
-          exit={{ opacity: 0, y: -5, rotate: 16 }}
-          transition={{ duration: 0.2, ease: "easeInOut" }}
-        >
-          {dark ? <Moon size={18} /> : <Sun size={18} />}
-        </motion.span>
-      </AnimatePresence>
-    </motion.button>
-  );
-}
-
-function StatCard({ title, value, change, positive, icon: Icon, theme, accent }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -5, scale: 1.02 }}
-      transition={{ duration: 0.28, ease: "easeInOut" }}
-      className={cx("group relative overflow-hidden rounded-[28px] border p-5 backdrop-blur-2xl", theme.panel)}
-    >
-      <div className={cx("absolute inset-0 bg-gradient-to-br opacity-90", accent)} />
-      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-3xl transition-transform duration-300 group-hover:scale-125" />
-      <div className="relative">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className={cx("text-sm", theme.mutedText)}>{title}</div>
-            <div className="mt-2 bg-gradient-to-r from-white via-cyan-100 to-violet-200 bg-clip-text text-3xl font-semibold tracking-tight text-transparent">
-              {value}
-            </div>
-          </div>
-          <div className={cx("flex h-12 w-12 items-center justify-center rounded-2xl border bg-white/10", theme.mutedPanel)}>
-            <Icon size={20} />
-          </div>
-        </div>
-        <div className="mt-5 flex items-center gap-2 text-sm">
-          {positive ? (
-            <ArrowUpRight size={16} className="text-emerald-400" />
-          ) : (
-            <ArrowDownRight size={16} className="text-rose-400" />
-          )}
-          <span className={positive ? "text-emerald-400" : "text-rose-400"}>{change}</span>
-          <span className={theme.mutedText}>vs previous period</span>
-        </div>
+    <div className="min-h-screen flex bg-slate-50 dark:bg-[#030712] text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300 overflow-hidden selection:bg-blue-500/30">
+      {/* Dark Mode Background Gradient */}
+      <div className="fixed inset-0 z-0 pointer-events-none hidden dark:block">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-900/20 via-[#030712] to-[#030712]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent"></div>
       </div>
-    </motion.div>
-  );
-}
 
-function Panel({ children, theme, className = "" }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: "easeInOut" }}
-      className={cx("rounded-[30px] border p-5 backdrop-blur-2xl sm:p-6", theme.panel, className)}
-    >
-      {children}
-    </motion.div>
-  );
-}
-
-function ChartTooltip({ active, payload, label, dark }) {
-  if (!active || !payload?.length) return null;
-
-  return (
-    <div
-      className={cx(
-        "rounded-2xl border px-4 py-3 text-sm shadow-2xl backdrop-blur-2xl",
-        dark ? "border-white/10 bg-slate-950/90 text-white" : "border-slate-200 bg-white/95 text-slate-900"
-      )}
-    >
-      <div className={cx("mb-2 text-xs uppercase tracking-[0.24em]", dark ? "text-slate-400" : "text-slate-500")}>
-        {label}
-      </div>
-      {payload.map((item) => (
-        <div key={item.dataKey} className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-          <span className={dark ? "text-slate-300" : "text-slate-600"}>{item.dataKey}</span>
-          <span className="ml-auto font-semibold">{formatMoney(item.value)}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Sidebar({ activeNav, setActiveNav, theme, mobileOpen, setMobileOpen, dark }) {
-  const sidebarBody = (
-    <div className={cx("flex h-full flex-col border-r p-5 backdrop-blur-2xl", theme.sidebar)}>
-      <div className={cx("flex items-center gap-3 rounded-2xl border px-4 py-4", theme.sidebarCard)}>
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-fuchsia-500 text-white shadow-[0_0_30px_rgba(124,58,237,0.35)]">
-          <Sparkles size={18} />
-        </div>
+      {/* Sidebar */}
+      <aside className="relative z-10 w-72 border-r border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-2xl hidden lg:flex flex-col justify-between">
         <div>
-          <div className={cx("text-lg font-semibold tracking-tight", theme.text)}>FinSight AI</div>
-          <div className={theme.mutedText}>Premium Finance OS</div>
+          <div className="h-20 flex items-center px-8 border-b border-slate-200 dark:border-white/10">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center mr-3 shadow-lg shadow-blue-500/20">
+              <Zap size={18} className="text-white" />
+            </div>
+            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
+              FinSight AI
+            </span>
+          </div>
+          <nav className="p-4 space-y-2 mt-4">
+            <SidebarItem icon={LayoutDashboard} label="Dashboard" active />
+            <SidebarItem icon={BarChart3} label="Analytics" />
+            <SidebarItem icon={BrainCircuit} label="AI Insights" badge="New" />
+            <SidebarItem icon={CreditCard} label="Cards" />
+          </nav>
         </div>
-      </div>
+        <div className="p-4 border-t border-slate-200 dark:border-white/10">
+          <SidebarItem icon={Settings} label="Settings" />
+        </div>
+      </aside>
 
-      <div className={cx("mt-8 text-[11px] font-semibold uppercase tracking-[0.28em]", theme.subtleText)}>Workspace</div>
-
-      <nav className="mt-4 space-y-2">
-        {navItems.map(({ id, label, icon: Icon }) => {
-          const active = activeNav === id;
-          return (
-            <motion.button
-              key={id}
-              whileHover={{ x: 4 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              onClick={() => {
-                setActiveNav(id);
-                setMobileOpen(false);
-              }}
-              className={cx(
-                "relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all duration-300",
-                active ? theme.activeNav : theme.inactiveNav
-              )}
+      {/* Main Content */}
+      <main className="relative z-10 flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Navbar */}
+        <header className="h-20 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-xl flex items-center justify-between px-8 shrink-0">
+          <div className="flex items-center w-96">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+              <input
+                type="text"
+                placeholder="Search transactions, insights..."
+                className="w-full bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200 dark:border-white/10 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
             >
-              {active && (
-                <motion.span
-                  layoutId="activeNavPill"
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-500/8 via-transparent to-cyan-400/8"
-                />
-              )}
-              <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                <Icon size={18} />
-              </span>
-              <span className="relative">{label}</span>
-            </motion.button>
-          );
-        })}
-      </nav>
-
-      <div className={cx("mt-auto rounded-[28px] border p-4", theme.sidebarCard)}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 text-sm font-bold text-white">
-            AP
-          </div>
-          <div>
-            <div className={cx("font-semibold", theme.text)}>Aayush Patil</div>
-            <div className={theme.mutedText}>Founder Plan</div>
-          </div>
-        </div>
-        <div
-          className={cx(
-            "mt-4 rounded-2xl border px-3 py-2 text-xs",
-            dark ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200" : "border-emerald-200 bg-emerald-50 text-emerald-700"
-          )}
-        >
-          AI copilot active
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      <aside className="hidden xl:fixed xl:inset-y-0 xl:left-0 xl:z-30 xl:block xl:w-72">{sidebarBody}</aside>
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              className={cx("fixed inset-0 z-40 backdrop-blur-sm xl:hidden", theme.overlay)}
-              onClick={() => setMobileOpen(false)}
-            />
-            <motion.aside
-              initial={{ x: -320 }}
-              animate={{ x: 0 }}
-              exit={{ x: -320 }}
-              transition={{ duration: 0.28, ease: "easeInOut" }}
-              className="fixed inset-y-0 left-0 z-50 w-72 xl:hidden"
-            >
-              <div className="absolute right-4 top-4 z-10">
-                <button
-                  onClick={() => setMobileOpen(false)}
-                  className={cx("flex h-10 w-10 items-center justify-center rounded-2xl border backdrop-blur-xl", theme.button)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              {sidebarBody}
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
-
-function TopBar({
-  dark,
-  setDark,
-  setMobileOpen,
-  theme,
-  search,
-  setSearch,
-  handleSearch,
-  notificationsOn,
-}) {
-  return (
-    <div className={cx("sticky top-0 z-20 border-b backdrop-blur-2xl", theme.topbar)}>
-      <div className="flex items-center gap-3 px-4 py-4 sm:px-6 xl:px-8">
-        <button
-          onClick={() => setMobileOpen(true)}
-          className={cx("flex h-11 w-11 items-center justify-center rounded-2xl border backdrop-blur-xl xl:hidden", theme.button)}
-        >
-          <Menu size={18} />
-        </button>
-
-        <form onSubmit={handleSearch} className="flex flex-1">
-          <div
-            className={cx(
-              "group flex h-11 w-full items-center gap-3 rounded-2xl border px-4 backdrop-blur-xl transition-all duration-300",
-              theme.input
-            )}
-          >
-            <Search size={17} className={theme.mutedText} />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="w-full bg-transparent text-sm outline-none"
-              placeholder="Search dashboard, analytics, insights, transactions..."
-            />
-          </div>
-        </form>
-
-        <button className={cx("relative flex h-11 w-11 items-center justify-center rounded-2xl border backdrop-blur-xl", theme.button)}>
-          <Bell size={18} />
-          {notificationsOn && (
-            <span className="absolute right-3 top-3 h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.85)]" />
-          )}
-        </button>
-
-        <ThemeToggle dark={dark} onToggle={() => setDark((value) => !value)} theme={theme} />
-
-        <div className={cx("flex items-center gap-3 rounded-2xl border px-3 py-2 backdrop-blur-xl", theme.mutedPanel)}>
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 via-fuchsia-500 to-cyan-400 text-sm font-bold text-white">
-            AP
-          </div>
-          <div className="hidden sm:block">
-            <div className={cx("text-sm font-semibold", theme.text)}>Aayush Patil</div>
-            <div className={theme.mutedText}>Personal workspace</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DashboardSection({
-  theme,
-  dark,
-  range,
-  setRange,
-  filterOpen,
-  setFilterOpen,
-  filterRef,
-  filteredTransactions,
-  prediction,
-}) {
-  const totalBalance = 482350;
-  const income = 125000;
-  const expenses = 48620;
-  const savings = income - expenses;
-  const dateLabel = new Intl.DateTimeFormat("en-IN", { dateStyle: "full" }).format(new Date("2026-04-17T09:00:00"));
-
-  return (
-    <>
-      <section className={cx("mb-6 rounded-[32px] border p-6 backdrop-blur-2xl", theme.panel)}>
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div
-              className={cx(
-                "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs uppercase tracking-[0.24em]",
-                dark ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-200" : "border-cyan-200 bg-cyan-50 text-cyan-700"
-              )}
-            >
-              <Sparkles size={14} />
-              Smart Finance Workspace
-            </div>
-            <h1 className={cx("mt-4 text-3xl font-semibold tracking-tight sm:text-4xl", theme.text)}>
-              Welcome back, Aayush Patil
-            </h1>
-            <p className={cx("mt-2 max-w-2xl text-sm leading-7 sm:text-base", theme.softText)}>
-              Your dashboard is now interactive. Switch sections, track analytics, review AI insights, and test live investment predictions with your own amount.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className={cx("rounded-2xl border px-4 py-3", theme.mutedPanel)}>
-              <div className={cx("text-xs uppercase tracking-[0.22em]", theme.mutedText)}>Net savings</div>
-              <div className={cx("mt-2 text-xl font-semibold", theme.text)}>{formatMoney(savings)}</div>
-            </div>
-            <div className={cx("rounded-2xl border px-4 py-3", theme.mutedPanel)}>
-              <div className={cx("text-xs uppercase tracking-[0.22em]", theme.mutedText)}>Today</div>
-              <div className={cx("mt-2 text-sm font-medium", theme.text)}>{dateLabel}</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <StatCard
-          title="Total Balance"
-          value={formatMoney(totalBalance)}
-          change="+8.4%"
-          positive
-          icon={Wallet}
-          theme={theme}
-          accent="from-violet-500/25 via-fuchsia-500/12 to-cyan-400/10"
-        />
-        <StatCard
-          title="Income"
-          value={formatMoney(income)}
-          change="+12.1%"
-          positive
-          icon={TrendingUp}
-          theme={theme}
-          accent="from-emerald-500/25 via-cyan-500/12 to-transparent"
-        />
-        <StatCard
-          title="Expenses"
-          value={formatMoney(expenses)}
-          change="+3.2%"
-          positive={false}
-          icon={TrendingDown}
-          theme={theme}
-          accent="from-rose-500/25 via-orange-500/12 to-transparent"
-        />
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 gap-4 2xl:grid-cols-[1.45fr_0.95fr]">
-        <Panel theme={theme}>
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Income vs expenses</h2>
-              <p className={cx("mt-1 text-sm", theme.mutedText)}>Track cash flow patterns over time</p>
-            </div>
-
-            <div className="relative w-full sm:w-auto" ref={filterRef}>
-              <button
-                onClick={() => setFilterOpen((value) => !value)}
-                className={cx("flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-sm transition-all duration-300 sm:min-w-[170px]", theme.button)}
-              >
-                <span>{range}</span>
-                <span className={cx("transition-transform duration-200", filterOpen && "rotate-180")}>v</span>
-              </button>
-
-              <AnimatePresence>
-                {filterOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                    className={cx(
-                      "absolute right-0 top-14 z-20 w-full overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl sm:w-48",
-                      dark ? "border-white/10 bg-slate-950/95" : "border-slate-200 bg-white/95"
-                    )}
-                  >
-                    {ranges.map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => {
-                          setRange(option);
-                          setFilterOpen(false);
-                        }}
-                        className={cx(
-                          "block w-full px-4 py-3 text-left text-sm transition-all duration-200",
-                          range === option
-                            ? dark
-                              ? "bg-violet-500/20 text-white"
-                              : "bg-violet-50 text-slate-900"
-                            : dark
-                              ? "text-slate-300 hover:bg-white/5 hover:text-white"
-                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                        )}
-                      >
-                        {option}
-                      </button>
-                    ))}
+              <AnimatePresence mode="wait">
+                {isDark ? (
+                  <motion.div key="sun" initial={{ opacity: 0, rotate: -90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 90 }} transition={{ duration: 0.2 }}>
+                    <Sun size={20} className="text-slate-400 hover:text-white" />
+                  </motion.div>
+                ) : (
+                  <motion.div key="moon" initial={{ opacity: 0, rotate: 90 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: -90 }} transition={{ duration: 0.2 }}>
+                    <Moon size={20} className="text-slate-600 hover:text-slate-900" />
                   </motion.div>
                 )}
               </AnimatePresence>
+            </button>
+            <button className="relative p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors">
+              <Bell size={20} className="text-slate-600 dark:text-slate-400" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-pink-500 rounded-full shadow-[0_0_8px_rgba(236,72,153,0.8)]"></span>
+            </button>
+            <div className="w-10 h-10 rounded-full p-[2px] bg-gradient-to-r from-blue-500 to-purple-500 cursor-pointer hover:shadow-lg hover:shadow-blue-500/20 transition-all">
+              <img src="https://i.pravatar.cc/150?u=a042581f4e29026024d" alt="Profile" className="w-full h-full rounded-full border-2 border-white dark:border-[#030712] object-cover" />
             </div>
           </div>
+        </header>
 
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData[range]} margin={{ top: 5, right: 10, left: -12, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="incomeStroke" x1="0" x2="1">
-                    <stop offset="0%" stopColor="#22c55e" />
-                    <stop offset="100%" stopColor="#22d3ee" />
-                  </linearGradient>
-                  <linearGradient id="expenseStroke" x1="0" x2="1">
-                    <stop offset="0%" stopColor="#f97316" />
-                    <stop offset="100%" stopColor="#ec4899" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke={dark ? "rgba(148,163,184,0.18)" : "rgba(148,163,184,0.35)"} strokeDasharray="4 4" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: dark ? "#94a3b8" : "#64748b", fontSize: 12 }} />
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: dark ? "#94a3b8" : "#64748b", fontSize: 12 }}
-                  tickFormatter={(value) => `${Math.round(value / 1000)}k`}
-                />
-                <Tooltip content={<ChartTooltip dark={dark} />} />
-                <Line type="monotone" dataKey="income" stroke="url(#incomeStroke)" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 5, fill: "#22d3ee", strokeWidth: 0 }} />
-                <Line type="monotone" dataKey="expenses" stroke="url(#expenseStroke)" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 5, fill: "#ec4899", strokeWidth: 0 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
-
-        <Panel theme={theme}>
-          <div className="mb-5">
-            <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Live prediction preview</h2>
-            <p className={cx("mt-1 text-sm", theme.mutedText)}>Your custom amount flows into AI projection instantly</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3">
-            <div className={cx("rounded-2xl border p-4", theme.mutedPanel)}>
-              <div className={theme.mutedText}>Monthly investment</div>
-              <div className={cx("mt-2 text-2xl font-semibold", theme.text)}>{formatMoney(prediction.monthlyInvestment)}</div>
-            </div>
-            <div className={cx("rounded-2xl border p-4", theme.mutedPanel)}>
-              <div className={theme.mutedText}>Projected future value</div>
-              <div className="mt-2 text-2xl font-semibold text-cyan-400">{formatMoney(prediction.futureValue)}</div>
-            </div>
-            <div className={cx("rounded-2xl border p-4", theme.mutedPanel)}>
-              <div className={theme.mutedText}>Estimated wealth gain</div>
-              <div className="mt-2 text-2xl font-semibold text-emerald-400">{formatMoney(prediction.wealthGain)}</div>
-            </div>
-          </div>
-        </Panel>
-      </section>
-
-      <section className="mt-6 grid grid-cols-1 gap-4 2xl:grid-cols-[1.35fr_1fr]">
-        <Panel theme={theme}>
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Recent transactions</h2>
-              <p className={cx("mt-1 text-sm", theme.mutedText)}>
-                {filteredTransactions.length} result{filteredTransactions.length === 1 ? "" : "s"} visible
-              </p>
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-[26px] border border-inherit">
-            <div className="grid grid-cols-[1.4fr_1fr_1fr_0.9fr] gap-3 px-4 py-4 text-xs font-semibold uppercase tracking-[0.18em]">
-              <div className={theme.tableHead}>Name</div>
-              <div className={theme.tableHead}>Date</div>
-              <div className={theme.tableHead}>Category</div>
-              <div className={cx("text-right", theme.tableHead)}>Amount</div>
-            </div>
-            <div className={cx("divide-y", theme.divider)}>
-              {filteredTransactions.map((item) => (
-                <motion.div
-                  key={`${item.name}-${item.date}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.24, ease: "easeInOut" }}
-                  className={cx("grid grid-cols-[1.4fr_1fr_1fr_0.9fr] gap-3 px-4 py-4 text-sm", theme.softText)}
-                >
-                  <div className={cx("font-medium", theme.text)}>{item.name}</div>
-                  <div>{item.date}</div>
-                  <div>{item.category}</div>
-                  <div className={cx("text-right font-semibold", item.positive ? "text-emerald-400" : "text-rose-400")}>
-                    {item.positive ? "+" : "-"}
-                    {formatMoney(Math.abs(item.amount))}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </Panel>
-
-        <Panel theme={theme}>
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <div>
-              <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Portfolio overview</h2>
-              <p className={cx("mt-1 text-sm", theme.mutedText)}>Savings and investment progress</p>
-            </div>
-            <div className={cx("rounded-2xl border px-3 py-2 text-xs font-medium", dark ? "border-emerald-400/20 bg-emerald-400/10 text-emerald-200" : "border-emerald-200 bg-emerald-50 text-emerald-700")}>
-              +18.3% YTD
-            </div>
-          </div>
-
-          <div className="space-y-5">
-            {portfolio.map((item) => {
-              const progress = Math.min(100, Math.round((item.current / item.target) * 100));
-              return (
-                <div key={item.label} className={cx("rounded-[26px] border p-4", theme.mutedPanel)}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className={cx("text-sm font-semibold", theme.text)}>{item.label}</div>
-                      <div className={cx("mt-1 text-sm", theme.mutedText)}>
-                        {formatMoney(item.current)} of {formatMoney(item.target)}
-                      </div>
-                    </div>
-                    <div className={cx("rounded-xl border px-2.5 py-1 text-xs font-medium", dark ? "border-cyan-400/20 bg-cyan-400/10 text-cyan-200" : "border-cyan-200 bg-cyan-50 text-cyan-700")}>
-                      {item.change}
-                    </div>
-                  </div>
-                  <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-slate-300/20">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.45, ease: "easeInOut" }}
-                      className="h-full rounded-full bg-gradient-to-r from-violet-500 via-cyan-400 to-emerald-400"
-                    />
-                  </div>
-                  <div className={cx("mt-3 flex items-center justify-between text-xs", theme.mutedText)}>
-                    <span>Goal completion</span>
-                    <span>{progress}%</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Panel>
-      </section>
-    </>
-  );
-}
-
-function AnalyticsSection({ theme, dark, range }) {
-  const analyticsCards = [
-    { label: "Average savings rate", value: "31.4%", trend: "+4.2%" },
-    { label: "Investment growth", value: "18.3%", trend: "+2.6%" },
-    { label: "Expense stability", value: "Healthy", trend: "-1.1%" },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <section className={cx("rounded-[32px] border p-6", theme.panel)}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className={cx("text-3xl font-semibold tracking-tight", theme.text)}>Analytics</h1>
-            <p className={cx("mt-2 max-w-2xl text-sm leading-7", theme.softText)}>
-              A deeper view into savings quality, spending behavior, and portfolio efficiency for the selected period.
-            </p>
-          </div>
-          <div className={cx("rounded-2xl border px-4 py-3 text-sm", theme.mutedPanel)}>
-            Active range: <span className="font-semibold">{range}</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        {analyticsCards.map((item) => (
-          <Panel key={item.label} theme={theme}>
-            <div className={theme.mutedText}>{item.label}</div>
-            <div className={cx("mt-3 text-3xl font-semibold", theme.text)}>{item.value}</div>
-            <div className="mt-2 text-sm text-cyan-400">{item.trend}</div>
-          </Panel>
-        ))}
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <Panel theme={theme}>
-          <div className="mb-5">
-            <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Savings trend</h2>
-            <p className={cx("mt-1 text-sm", theme.mutedText)}>Net retained capital after expenses</p>
-          </div>
-          <div className="h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData[range]} margin={{ top: 5, right: 10, left: -12, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="savingsStroke" x1="0" x2="1">
-                    <stop offset="0%" stopColor="#8b5cf6" />
-                    <stop offset="100%" stopColor="#22d3ee" />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke={dark ? "rgba(148,163,184,0.18)" : "rgba(148,163,184,0.35)"} strokeDasharray="4 4" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: dark ? "#94a3b8" : "#64748b", fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: dark ? "#94a3b8" : "#64748b", fontSize: 12 }} tickFormatter={(value) => `${Math.round(value / 1000)}k`} />
-                <Tooltip content={<ChartTooltip dark={dark} />} />
-                <Line type="monotone" dataKey="savings" stroke="url(#savingsStroke)" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 5, fill: "#8b5cf6", strokeWidth: 0 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
-
-        <Panel theme={theme}>
-          <div className="mb-5">
-            <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Spending mix</h2>
-            <p className={cx("mt-1 text-sm", theme.mutedText)}>Where your money is going</p>
-          </div>
-          <div className="h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={spendData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={96} paddingAngle={4}>
-                  {spendData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {spendData.map((item) => (
-              <div key={item.name} className={cx("flex items-center justify-between rounded-2xl border px-4 py-3", theme.mutedPanel)}>
-                <div className="flex items-center gap-3">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className={theme.softText}>{item.name}</span>
-                </div>
-                <span className={cx("font-semibold", theme.text)}>{item.value}%</span>
+        {/* Dashboard Content */}
+        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="max-w-7xl mx-auto space-y-8 pb-10"
+          >
+            {/* Header section */}
+            <div className="flex justify-between items-end">
+              <div>
+                <motion.h1 variants={itemVariants} className="text-3xl font-bold mb-1">
+                  Welcome back, Alex
+                </motion.h1>
+                <motion.p variants={itemVariants} className="text-slate-500 dark:text-slate-400 text-sm">
+                  Here is your financial overview for this month.
+                </motion.p>
               </div>
-            ))}
-          </div>
-        </Panel>
-      </section>
-    </div>
-  );
-}
-
-function InsightsSection({
-  theme,
-  dark,
-  predictionInput,
-  setPredictionInput,
-  years,
-  setYears,
-  returnRate,
-  setReturnRate,
-  prediction,
-  filteredInsights,
-}) {
-  return (
-    <div className="space-y-6">
-      <section className={cx("rounded-[32px] border p-6", theme.panel)}>
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className={cx("text-3xl font-semibold tracking-tight", theme.text)}>AI Insights</h1>
-            <p className={cx("mt-2 max-w-2xl text-sm leading-7", theme.softText)}>
-              Smart financial actions, risk nudges, and a live projection tool where you can enter your own amount and see predictions immediately.
-            </p>
-          </div>
-          <div className={cx("rounded-2xl border px-4 py-3 text-sm", theme.mutedPanel)}>
-            Live prediction engine: <span className="font-semibold text-cyan-400">Active</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <Panel theme={theme}>
-          <div className="mb-5 flex items-center gap-2">
-            <Zap size={18} className="text-cyan-400" />
-            <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Live investment prediction</h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div>
-              <label className={cx("mb-2 block text-sm font-medium", theme.softText)}>Monthly amount</label>
-              <input
-                value={predictionInput}
-                onChange={(event) => setPredictionInput(event.target.value.replace(/[^\d]/g, ""))}
-                className={cx("w-full rounded-2xl border px-4 py-3 outline-none transition-all duration-300", theme.input)}
-                placeholder="5000"
-              />
-            </div>
-            <div>
-              <label className={cx("mb-2 block text-sm font-medium", theme.softText)}>Years</label>
-              <input
-                type="number"
-                min="1"
-                max="40"
-                value={years}
-                onChange={(event) => setYears(event.target.value)}
-                className={cx("w-full rounded-2xl border px-4 py-3 outline-none transition-all duration-300", theme.input)}
-              />
-            </div>
-            <div>
-              <label className={cx("mb-2 block text-sm font-medium", theme.softText)}>Expected return %</label>
-              <input
-                type="number"
-                min="1"
-                max="30"
-                step="0.5"
-                value={returnRate}
-                onChange={(event) => setReturnRate(event.target.value)}
-                className={cx("w-full rounded-2xl border px-4 py-3 outline-none transition-all duration-300", theme.input)}
-              />
-            </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-            <div className={cx("rounded-[26px] border p-4", theme.mutedPanel)}>
-              <div className={theme.mutedText}>Total invested</div>
-              <div className={cx("mt-3 text-2xl font-semibold", theme.text)}>{formatMoney(prediction.totalInvested)}</div>
-            </div>
-            <div className={cx("rounded-[26px] border p-4", theme.mutedPanel)}>
-              <div className={theme.mutedText}>Projected value</div>
-              <div className="mt-3 text-2xl font-semibold text-cyan-400">{formatMoney(prediction.futureValue)}</div>
-            </div>
-            <div className={cx("rounded-[26px] border p-4", theme.mutedPanel)}>
-              <div className={theme.mutedText}>Estimated returns</div>
-              <div className="mt-3 text-2xl font-semibold text-emerald-400">{formatMoney(prediction.wealthGain)}</div>
-            </div>
-          </div>
-
-          <div className={cx("mt-5 rounded-[26px] border p-5", theme.mutedPanel)}>
-            <div className={cx("text-sm", theme.softText)}>
-              If you invest <span className="font-semibold text-cyan-400">{formatMoney(prediction.monthlyInvestment)}</span> every month for{" "}
-              <span className="font-semibold">{prediction.years}</span> years at an expected return of{" "}
-              <span className="font-semibold">{prediction.returnRate}%</span>, your projected value becomes{" "}
-              <span className="font-semibold text-emerald-400">{formatMoney(prediction.futureValue)}</span>.
-            </div>
-          </div>
-        </Panel>
-
-        <Panel theme={theme}>
-          <div className="mb-5">
-            <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Smart recommendations</h2>
-            <p className={cx("mt-1 text-sm", theme.mutedText)}>Insights update based on spending behavior and long-term goals</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            {filteredInsights.map((card) => {
-              const Icon = card.icon;
-              return (
-                <motion.div
-                  key={card.title}
-                  whileHover={{ y: -4, scale: 1.015 }}
-                  transition={{ duration: 0.24, ease: "easeInOut" }}
-                  className={cx("relative overflow-hidden rounded-[28px] border p-5", theme.mutedPanel)}
-                >
-                  <div className={cx("absolute inset-0 bg-gradient-to-br", insightGradient(card.tone))} />
-                  <div className="relative">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className={cx("flex h-12 w-12 items-center justify-center rounded-2xl border", toggleClass(card.tone))}>
-                        <Icon size={20} />
-                      </div>
-                      <div className={cx("rounded-full border px-3 py-1 text-xs font-medium", toggleClass(card.tone))}>
-                        AI signal
-                      </div>
-                    </div>
-                    <h3 className={cx("mt-5 text-lg font-semibold tracking-tight", theme.text)}>{card.title}</h3>
-                    <p className={cx("mt-3 text-sm leading-7", theme.softText)}>{card.body}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </Panel>
-      </section>
-    </div>
-  );
-}
-
-function SettingsSection({ theme, dark, settings, setSettings, setDark }) {
-  const settingRows = [
-    {
-      key: "notifications",
-      title: "Real-time notifications",
-      description: "Get alerts for large transactions, savings milestones, and portfolio changes.",
-      icon: Bell,
-    },
-    {
-      key: "autoInsights",
-      title: "Auto AI insights",
-      description: "Generate automatic recommendations whenever new financial activity is detected.",
-      icon: BrainCircuit,
-    },
-    {
-      key: "safeMode",
-      title: "Privacy safe mode",
-      description: "Keep projections and analytics visible only inside your personal workspace.",
-      icon: ShieldCheck,
-    },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <section className={cx("rounded-[32px] border p-6", theme.panel)}>
-        <h1 className={cx("text-3xl font-semibold tracking-tight", theme.text)}>Settings</h1>
-        <p className={cx("mt-2 max-w-2xl text-sm leading-7", theme.softText)}>
-          Control how the dashboard behaves, how AI suggestions appear, and whether you want dark or light mode.
-        </p>
-      </section>
-
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_0.9fr]">
-        <Panel theme={theme}>
-          <div className="mb-5 flex items-center gap-2">
-            <SlidersHorizontal size={18} className="text-cyan-400" />
-            <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Workspace controls</h2>
-          </div>
-
-          <div className="space-y-4">
-            {settingRows.map((item) => {
-              const Icon = item.icon;
-              const enabled = settings[item.key];
-              return (
-                <div key={item.key} className={cx("flex items-center justify-between gap-4 rounded-[26px] border p-4", theme.mutedPanel)}>
-                  <div className="flex items-start gap-4">
-                    <div className={cx("flex h-12 w-12 items-center justify-center rounded-2xl border", theme.mutedPanel)}>
-                      <Icon size={20} />
-                    </div>
-                    <div>
-                      <div className={cx("font-semibold", theme.text)}>{item.title}</div>
-                      <div className={cx("mt-1 text-sm leading-6", theme.mutedText)}>{item.description}</div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSettings((prev) => ({ ...prev, [item.key]: !prev[item.key] }))}
-                    className={cx(
-                      "relative h-8 w-16 rounded-full border transition-all duration-300",
-                      enabled
-                        ? "border-cyan-400/30 bg-cyan-400/20"
-                        : dark
-                          ? "border-white/10 bg-white/10"
-                          : "border-slate-300 bg-slate-200"
-                    )}
-                  >
-                    <span
-                      className={cx(
-                        "absolute top-1 flex h-6 w-6 items-center justify-center rounded-full bg-white text-slate-900 transition-all duration-300",
-                        enabled ? "left-9" : "left-1"
-                      )}
-                    >
-                      {enabled ? <CheckCircle2 size={14} /> : null}
-                    </span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </Panel>
-
-        <Panel theme={theme}>
-          <div className="mb-5">
-            <h2 className={cx("text-xl font-semibold tracking-tight", theme.text)}>Theme mode</h2>
-            <p className={cx("mt-1 text-sm", theme.mutedText)}>Switch between dark and light instantly</p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <button
-              onClick={() => setDark(true)}
-              className={cx(
-                "rounded-[26px] border p-5 text-left transition-all duration-300",
-                dark ? "border-violet-400/30 bg-violet-500/10" : theme.mutedPanel
-              )}
-            >
-              <Moon size={20} className="text-violet-400" />
-              <div className={cx("mt-4 text-lg font-semibold", theme.text)}>Dark mode</div>
-              <div className={cx("mt-2 text-sm leading-6", theme.mutedText)}>High-contrast premium interface for focus and low-light work.</div>
-            </button>
-            <button
-              onClick={() => setDark(false)}
-              className={cx(
-                "rounded-[26px] border p-5 text-left transition-all duration-300",
-                !dark ? "border-cyan-400/30 bg-cyan-400/10" : theme.mutedPanel
-              )}
-            >
-              <Sun size={20} className="text-cyan-400" />
-              <div className={cx("mt-4 text-lg font-semibold", theme.text)}>Light mode</div>
-              <div className={cx("mt-2 text-sm leading-6", theme.mutedText)}>Bright clean workspace with softer contrast and clear typography.</div>
-            </button>
-          </div>
-
-          <div className={cx("mt-5 rounded-[26px] border p-5", theme.mutedPanel)}>
-            <div className={cx("flex items-center gap-2 text-sm font-medium", theme.softText)}>
-              <DollarSign size={16} />
-              Active workspace summary
-            </div>
-            <div className={cx("mt-4 grid grid-cols-1 gap-3 md:grid-cols-2", theme.mutedText)}>
-              <div>Theme: <span className={cx("font-semibold", theme.text)}>{dark ? "Dark" : "Light"}</span></div>
-              <div>Notifications: <span className={cx("font-semibold", theme.text)}>{settings.notifications ? "On" : "Off"}</span></div>
-              <div>Auto AI insights: <span className={cx("font-semibold", theme.text)}>{settings.autoInsights ? "On" : "Off"}</span></div>
-              <div>Privacy safe mode: <span className={cx("font-semibold", theme.text)}>{settings.safeMode ? "On" : "Off"}</span></div>
-            </div>
-          </div>
-        </Panel>
-      </section>
-    </div>
-  );
-}
-
-export default function App() {
-  const [dark, setDark] = useState(() => localStorage.getItem("finsight-theme") !== "light");
-  const [activeNav, setActiveNav] = useState("dashboard");
-  const [range, setRange] = useState("Last 30 days");
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [predictionInput, setPredictionInput] = useState("5000");
-  const [years, setYears] = useState("10");
-  const [returnRate, setReturnRate] = useState("12");
-  const [settings, setSettings] = useState({
-    notifications: true,
-    autoInsights: true,
-    safeMode: true,
-  });
-  const filterRef = useRef(null);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle("dark", dark);
-    localStorage.setItem("finsight-theme", dark ? "dark" : "light");
-  }, [dark]);
-
-  useEffect(() => {
-    const handleOutside = (event) => {
-      if (filterRef.current && !filterRef.current.contains(event.target)) {
-        setFilterOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, []);
-
-  const theme = dark ? themeMap.dark : themeMap.light;
-  const searchValue = search.trim().toLowerCase();
-
-  const prediction = useMemo(() => {
-    const monthlyInvestment = Math.max(0, Number(predictionInput) || 0);
-    const yearsNum = Math.max(1, Number(years) || 1);
-    const rateNum = Math.max(1, Number(returnRate) || 1);
-    const monthlyRate = rateNum / 100 / 12;
-    const months = yearsNum * 12;
-    const futureValue = monthlyRate === 0
-      ? monthlyInvestment * months
-      : monthlyInvestment * (((1 + monthlyRate) ** months - 1) / monthlyRate) * (1 + monthlyRate);
-    const totalInvested = monthlyInvestment * months;
-    return {
-      monthlyInvestment,
-      years: yearsNum,
-      returnRate: rateNum,
-      totalInvested,
-      futureValue: Math.round(futureValue),
-      wealthGain: Math.round(futureValue - totalInvested),
-    };
-  }, [predictionInput, years, returnRate]);
-
-  const filteredTransactions = useMemo(() => {
-    if (!searchValue) return transactions;
-    return transactions.filter((item) =>
-      `${item.name} ${item.category} ${item.date}`.toLowerCase().includes(searchValue)
-    );
-  }, [searchValue]);
-
-  const filteredInsights = useMemo(() => {
-    if (!searchValue) return insightCards;
-    return insightCards.filter((item) =>
-      `${item.title} ${item.body}`.toLowerCase().includes(searchValue)
-    );
-  }, [searchValue]);
-
-  const handleSearch = (event) => {
-    event.preventDefault();
-    if (!searchValue) return;
-
-    const matchedNav = navItems.find((item) => item.label.toLowerCase().includes(searchValue));
-    if (matchedNav) {
-      setActiveNav(matchedNav.id);
-      return;
-    }
-
-    if (filteredInsights.length) {
-      setActiveNav("insights");
-      return;
-    }
-
-    if (filteredTransactions.length !== transactions.length) {
-      setActiveNav("dashboard");
-      return;
-    }
-
-    setActiveNav("analytics");
-  };
-
-  const activeTitle = navItems.find((item) => item.id === activeNav)?.label ?? "Dashboard";
-
-  return (
-    <div className={dark ? "dark" : ""}>
-      <style>{`
-        html, body, #root {
-          width: 100%;
-          max-width: 100%;
-          min-height: 100%;
-          margin: 0;
-        }
-        body {
-          text-align: left;
-          font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-          transition: background 240ms ease-in-out, color 240ms ease-in-out;
-        }
-        #root {
-          border: 0;
-          margin: 0;
-          display: block;
-        }
-        * {
-          box-sizing: border-box;
-        }
-      `}</style>
-
-      <div className={cx("min-h-screen transition-colors duration-300", theme.app)}>
-        <Sidebar
-          activeNav={activeNav}
-          setActiveNav={setActiveNav}
-          theme={theme}
-          mobileOpen={mobileOpen}
-          setMobileOpen={setMobileOpen}
-          dark={dark}
-        />
-
-        <div className="min-h-screen xl:pl-72">
-          <TopBar
-            dark={dark}
-            setDark={setDark}
-            setMobileOpen={setMobileOpen}
-            theme={theme}
-            search={search}
-            setSearch={setSearch}
-            handleSearch={handleSearch}
-            notificationsOn={settings.notifications}
-          />
-
-          <main className="px-4 py-6 sm:px-6 xl:px-8">
-            <div className="mb-4">
-              <div className={cx("text-sm uppercase tracking-[0.26em]", theme.subtleText)}>Current section</div>
-              <div className={cx("mt-1 text-xl font-semibold", theme.text)}>{activeTitle}</div>
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeNav}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -16 }}
-                transition={{ duration: 0.24, ease: "easeInOut" }}
+              <motion.button
+                variants={itemVariants}
+                className="flex items-center space-x-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2 rounded-xl text-sm font-medium hover:scale-105 transition-transform shadow-lg shadow-slate-900/10 dark:shadow-white/10"
               >
-                {activeNav === "dashboard" && (
-                  <DashboardSection
-                    theme={theme}
-                    dark={dark}
-                    range={range}
-                    setRange={setRange}
-                    filterOpen={filterOpen}
-                    setFilterOpen={setFilterOpen}
-                    filterRef={filterRef}
-                    filteredTransactions={filteredTransactions}
-                    prediction={prediction}
-                  />
-                )}
+                <span>Download Report</span>
+                <ChevronDown size={16} />
+              </motion.button>
+            </div>
 
-                {activeNav === "analytics" && <AnalyticsSection theme={theme} dark={dark} range={range} />}
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <GlassCard className="p-6 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex justify-between items-start mb-4 relative z-10">
+                  <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                    <Wallet size={24} />
+                  </div>
+                  <span className="flex items-center text-sm font-medium text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                    +2.5% <ArrowUpRight size={14} className="ml-1" />
+                  </span>
+                </div>
+                <div className="relative z-10">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total Balance</p>
+                  <h2 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300">
+                    $124,563.00
+                  </h2>
+                </div>
+              </GlassCard>
 
-                {activeNav === "insights" && (
-                  <InsightsSection
-                    theme={theme}
-                    dark={dark}
-                    predictionInput={predictionInput}
-                    setPredictionInput={setPredictionInput}
-                    years={years}
-                    setYears={setYears}
-                    returnRate={returnRate}
-                    setReturnRate={setReturnRate}
-                    prediction={prediction}
-                    filteredInsights={filteredInsights}
-                  />
-                )}
+              <GlassCard className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <TrendingUp size={24} />
+                  </div>
+                  <span className="flex items-center text-sm font-medium text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                    +14.2% <ArrowUpRight size={14} className="ml-1" />
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total Income</p>
+                  <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">$8,450.00</h2>
+                </div>
+              </GlassCard>
 
-                {activeNav === "settings" && (
-                  <SettingsSection theme={theme} dark={dark} settings={settings} setSettings={setSettings} setDark={setDark} />
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </main>
+              <GlassCard className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="p-3 rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400">
+                    <Activity size={24} />
+                  </div>
+                  <span className="flex items-center text-sm font-medium text-pink-500 bg-pink-500/10 px-2.5 py-1 rounded-full">
+                    +4.3% <ArrowDownRight size={14} className="ml-1" />
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Total Expenses</p>
+                  <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">$3,240.50</h2>
+                </div>
+              </GlassCard>
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <GlassCard className="p-6 lg:col-span-2">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="font-semibold text-lg">Cash Flow Overview</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Income vs Expenses over time</p>
+                  </div>
+                  <select className="bg-slate-100 dark:bg-slate-800 border-none text-sm rounded-lg px-3 py-2 outline-none cursor-pointer">
+                    <option>Last 7 days</option>
+                    <option>Last 30 days</option>
+                    <option>This Year</option>
+                  </select>
+                </div>
+                <div className="h-72 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={revenueData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#e2e8f0'} />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 12 }} dx={-10} tickFormatter={(value) => `$${value}`} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                          borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                          borderRadius: '12px',
+                          backdropFilter: 'blur(8px)',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                        }}
+                      />
+                      <Line type="monotone" dataKey="income" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" dataKey="expenses" stroke="#ec4899" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </GlassCard>
+
+              <GlassCard className="p-6 flex flex-col">
+                <div className="mb-2">
+                  <h3 className="font-semibold text-lg">Spend by Category</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Where your money goes</p>
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center relative">
+                  <div className="h-48 w-full relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={categoryData}
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {categoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: isDark ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+                            border: 'none',
+                            borderRadius: '8px'
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                      <span className="text-2xl font-bold">$1.2k</span>
+                      <span className="text-xs text-slate-500">Total</span>
+                    </div>
+                  </div>
+                  <div className="w-full grid grid-cols-2 gap-3 mt-4">
+                    {categoryData.map((item, index) => (
+                      <div key={item.name} className="flex items-center text-xs">
+                        <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: COLORS[index % COLORS.length] }}></div>
+                        <span className="text-slate-600 dark:text-slate-300 truncate">{item.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+
+            {/* AI Insights & Transactions */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* AI Panel */}
+              <GlassCard className="p-6 xl:col-span-1 border-t-4 border-t-purple-500 flex flex-col">
+                <div className="flex items-center space-x-2 mb-6">
+                  <div className="p-2 bg-purple-500/20 text-purple-500 rounded-lg">
+                    <BrainCircuit size={20} />
+                  </div>
+                  <h3 className="font-semibold text-lg">AI Insights</h3>
+                </div>
+                <div className="space-y-4 flex-1">
+                  {insights.map((insight, idx) => (
+                    <motion.div
+                      key={insight.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.5 + (idx * 0.1) }}
+                      className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5 hover:border-purple-500/30 transition-colors cursor-default"
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className={`p-2 rounded-lg ${insight.bg} ${insight.color} shrink-0 mt-0.5`}>
+                          <insight.icon size={16} />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-slate-800 dark:text-slate-200">{insight.title}</h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{insight.desc}</p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </GlassCard>
+
+              {/* Transactions */}
+              <GlassCard className="p-0 xl:col-span-2 flex flex-col">
+                <div className="p-6 border-b border-slate-200 dark:border-white/10 flex justify-between items-center">
+                  <h3 className="font-semibold text-lg">Recent Transactions</h3>
+                  <button className="text-sm text-blue-500 hover:text-blue-600 font-medium">View All</button>
+                </div>
+                <div className="flex-1 overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-white/10 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-800/30">
+                        <th className="px-6 py-4 font-medium">Transaction</th>
+                        <th className="px-6 py-4 font-medium">Date</th>
+                        <th className="px-6 py-4 font-medium">Category</th>
+                        <th className="px-6 py-4 font-medium text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((tx) => (
+                        <tr key={tx.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors last:border-0 group">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                                {tx.category === 'Income' ? <TrendingUp size={16} /> : <CreditCard size={16} />}
+                              </div>
+                              <span className="font-medium text-sm text-slate-800 dark:text-slate-200">{tx.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">{tx.date}</td>
+                          <td className="px-6 py-4">
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                              {tx.category}
+                            </span>
+                          </td>
+                          <td className={`px-6 py-4 text-right text-sm font-semibold ${tx.amount > 0 ? 'text-emerald-500' : 'text-slate-800 dark:text-slate-200'}`}>
+                            {tx.amount > 0 ? '+' : ''}{tx.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </GlassCard>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </main>
+
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.4); }
+      `}} />
     </div>
   );
 }
+
+function SidebarItem({ icon: Icon, label, active, badge }) {
+  return (
+    <div className="relative group px-4">
+      {active && (
+        <motion.div
+          layoutId="active-nav"
+          className="absolute inset-y-0 left-0 w-1 bg-blue-500 rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.8)]"
+          initial={false}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        />
+      )}
+      <a
+        href="#"
+        className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${
+          active 
+            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+        }`}
+      >
+        <div className="flex items-center space-x-3">
+          <Icon size={20} className={active ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors'} />
+          <span className="font-medium text-sm">{label}</span>
+        </div>
+        {badge && (
+          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-full">
+            {badge}
+          </span>
+        )}
+      </a>
+    </div>
+  );
+}
+
+// #this is a trail project for a finance dashboard
