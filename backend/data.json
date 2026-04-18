@@ -1,0 +1,20 @@
+[
+    {
+      "name": "Salary",
+      "date": "18 Apr 2026",
+      "category": "Income",
+      "amount": 50000
+    },
+    {
+      "name": "Food",
+      "date": "17 Apr 2026",
+      "category": "Food",
+      "amount": -2000
+    },
+    {
+      "name": "Transport",
+      "date": "16 Apr 2026",
+      "category": "Travel",
+      "amount": -800
+    }
+  ]
